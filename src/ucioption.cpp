@@ -74,6 +74,7 @@ void init(OptionsMap& o) {
     o["nodestime"] << Option(0, 0, 10000);
     o["UCI_ShowWDL"] << Option(false);
     o["EvalFile"] << Option(EvalFileDefaultName, on_eval_file);
+    o["UCI_Variant"] << Option("chess", "xiangqi", {});
 }
 
 
@@ -90,7 +91,8 @@ std::ostream& operator<<(std::ostream& os, const OptionsMap& om) {
 
                 if (o.type == "string" || o.type == "check" || o.type == "combo")
                     os << " default " << o.defaultValue;
-
+			    if (o.type == "combo")
+                    os << " var " << o.currentValue;
                 if (o.type == "spin")
                     os << " default " << int(stof(o.defaultValue)) << " min " << o.min << " max "
                        << o.max;

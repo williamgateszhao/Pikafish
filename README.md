@@ -30,6 +30,14 @@
 
 </div>
 
+## Liground compatible
+
+  This is a branch added some fix to compliant with [Liground](https://github.com/ml-research/liground).
+  
+  The fix make this branch not compatible with standard Xiangqi interface like [天机象棋](http://www.xqpt.com/).
+
+  The fix is completely copied from [mtaktikos's fork](https://github.com/mtaktikos/Pikafish/tree/liground-compatible), just merged latest commit of upstream.
+
 ## Overview
 
 [Pikafish][website-link] is a **free and strong UCI xiangqi engine** derived from

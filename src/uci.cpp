@@ -378,7 +378,9 @@ std::string UCI::wdl(Value v, int ply) {
 
 // Converts a Square to a string in algebraic notation (g1, a7, etc.)
 std::string UCI::square(Square s) {
-    return std::string{char('a' + file_of(s)), char('0' + rank_of(s))};
+    if (rank_of(s) < 9)
+        return std::string{ char('a' + file_of(s)), char('1' + rank_of(s)) };
+    else return std::string{ char('a' + file_of(s)), char('1'), char('0') };
 }
 
 
