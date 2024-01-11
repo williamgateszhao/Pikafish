@@ -1,6 +1,6 @@
 /*
   Stockfish, a UCI chess playing engine derived from Glaurung 2.1
-  Copyright (C) 2004-2023 The Stockfish developers (see AUTHORS file)
+  Copyright (C) 2004-2024 The Stockfish developers (see AUTHORS file)
 
   Stockfish is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -205,7 +205,7 @@ void Position::set_state() const {
     st->pawnKey              = Zobrist::noPawns;
     st->majorMaterial[WHITE] = st->majorMaterial[BLACK] = VALUE_ZERO;
     st->checkersBB = checkers_to(~sideToMove, square<KING>(sideToMove));
-    st->move       = MOVE_NONE;
+    st->move       = Move::none();
 
     set_check_info();
 
@@ -327,8 +327,8 @@ bool Position::legal(Move m) const {
     assert(is_ok(m));
 
     Color    us       = sideToMove;
-    Square   from     = from_sq(m);
-    Square   to       = to_sq(m);
+    Square   from     = m.from_sq();
+    Square   to       = m.to_sq();
     Bitboard occupied = (pieces() ^ from) | to;
     Square   ksq      = type_of(moved_piece(m)) == KING ? to : square<KING>(us);
 
@@ -355,8 +355,8 @@ bool Position::legal(Move m) const {
 bool Position::pseudo_legal(const Move m) const {
 
     Color  us   = sideToMove;
-    Square from = from_sq(m);
-    Square to   = to_sq(m);
+    Square from = m.from_sq();
+    Square to   = m.to_sq();
     Piece  pc   = moved_piece(m);
 
     // If the 'from' square is not occupied by a piece belonging to the side to
@@ -384,8 +384,8 @@ bool Position::gives_check(Move m) const {
     assert(is_ok(m));
     assert(color_of(moved_piece(m)) == sideToMove);
 
-    Square from = from_sq(m);
-    Square to   = to_sq(m);
+    Square from = m.from_sq();
+    Square to   = m.to_sq();
     Square ksq  = square<KING>(~sideToMove);
 
     PieceType pt = type_of(moved_piece(m));
@@ -451,8 +451,8 @@ void Position::do_move(Move m, StateInfo& newSt, bool givesCheck) {
 
     Color  us       = sideToMove;
     Color  them     = ~us;
-    Square from     = from_sq(m);
-    Square to       = to_sq(m);
+    Square from     = m.from_sq();
+    Square to       = m.to_sq();
     Piece  pc       = piece_on(from);
     Piece  captured = piece_on(to);
 
@@ -532,8 +532,8 @@ void Position::undo_move(Move m) {
 
     sideToMove = ~sideToMove;
 
-    Square from = from_sq(m);
-    Square to   = to_sq(m);
+    Square from = m.from_sq();
+    Square to   = m.to_sq();
 
     assert(empty(from));
     assert(type_of(st->capturedPiece) != KING);
@@ -610,8 +610,8 @@ void Position::undo_null_move() {
 // for speculative prefetch.
 Key Position::key_after(Move m) const {
 
-    Square from     = from_sq(m);
-    Square to       = to_sq(m);
+    Square from     = m.from_sq();
+    Square to       = m.to_sq();
     Piece  pc       = piece_on(from);
     Piece  captured = piece_on(to);
     Key    k        = st->key ^ Zobrist::side;
@@ -628,11 +628,11 @@ Key Position::key_after(Move m) const {
 // Tests if the SEE (Static Exchange Evaluation)
 // value of move is greater or equal to the given threshold. We'll use an
 // algorithm similar to alpha-beta pruning with a null window.
-bool Position::see_ge(Move m, Value threshold) const {
+bool Position::see_ge(Move m, int threshold) const {
 
     assert(is_ok(m));
 
-    Square from = from_sq(m), to = to_sq(m);
+    Square from = m.from_sq(), to = m.to_sq();
 
     int swap = PieceValue[piece_on(to)] - threshold;
     if (swap < 0)
@@ -750,8 +750,8 @@ bool Position::see_ge(Move m, Value threshold) const {
 // Like do_move(), but a little lighter
 std::pair<Piece, int> Position::light_do_move(Move m) {
 
-    Square from     = from_sq(m);
-    Square to       = to_sq(m);
+    Square from     = m.from_sq();
+    Square to       = m.to_sq();
     Piece  captured = piece_on(to);
     int    id       = idBoard[to];
 
@@ -776,8 +776,8 @@ void Position::light_undo_move(Move m, Piece captured, int id) {
 
     sideToMove = ~sideToMove;
 
-    Square from = from_sq(m);
-    Square to   = to_sq(m);
+    Square from = m.from_sq();
+    Square to   = m.to_sq();
 
     // Put back id board
     idBoard[from] = idBoard[to];
@@ -800,8 +800,8 @@ bool Position::chase_legal(Move m) const {
     assert(is_ok(m));
 
     Color    us       = sideToMove;
-    Square   from     = from_sq(m);
-    Square   to       = to_sq(m);
+    Square   from     = m.from_sq();
+    Square   to       = m.to_sq();
     Bitboard occupied = (pieces() ^ from) | to;
 
     assert(color_of(moved_piece(m)) == us);
@@ -851,7 +851,7 @@ uint16_t Position::chased(Color c) {
         while (candidates)
         {
             Square to = pop_lsb(candidates);
-            if (chase_legal(make_move(from, to)))
+            if (chase_legal(Move(from, to)))
                 chase |= (1 << idBoard[to]);
         }
 
@@ -859,7 +859,7 @@ uint16_t Position::chased(Color c) {
         while (attacks)
         {
             Square to = pop_lsb(attacks);
-            Move   m  = make_move(from, to);
+            Move   m  = Move(from, to);
 
             if (chase_legal(m))
             {
@@ -869,7 +869,7 @@ uint16_t Position::chased(Color c) {
                 while (recaptures)
                 {
                     Square s = pop_lsb(recaptures);
-                    if (chase_legal(make_move(s, to)))
+                    if (chase_legal(Move(s, to)))
                     {
                         trueChase = false;
                         break;
@@ -884,7 +884,7 @@ uint16_t Position::chased(Color c) {
                     {
                         sideToMove = ~sideToMove;
                         if ((attackerType == KNIGHT && ((between_bb(from, to) ^ to) & pieces()))
-                            || !chase_legal(make_move(to, from)))
+                            || !chase_legal(Move(to, from)))
                             chase |= (1 << idBoard[to]);
                         sideToMove = ~sideToMove;
                     }
